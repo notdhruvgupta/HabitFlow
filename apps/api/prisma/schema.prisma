@@ -1,0 +1,167 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  timezone     String   @default("UTC")
+  avatarUrl    String?  @map("avatar_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  habits                 Habit[]
+  categories             Category[]
+  habitLogs              HabitLog[]
+  analyticsSnapshots     AnalyticsSnapshot[]
+  sentPartnerRequests    AccountabilityPartner[] @relation("UserPartners")
+  receivedPartnerRequests AccountabilityPartner[] @relation("PartnerUsers")
+
+  @@map("users")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  name      String
+  color     String   @default("#888780")
+  icon      String   @default("folder")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  habits Habit[]
+
+  @@map("categories")
+}
+
+model Habit {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  categoryId  String?   @map("category_id")
+  title       String
+  description String?
+  frequency   Frequency @default(DAILY)
+  targetDays  String[]  @map("target_days")
+  targetCount Int       @default(1) @map("target_count")
+  color       String    @default("#5DCAA5")
+  icon        String    @default("check")
+  isArchived  Boolean   @default(false) @map("is_archived")
+  startDate   DateTime  @default(now()) @map("start_date")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category            Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  logs                HabitLog[]
+  streak              Streak?
+  reminders           Reminder[]
+  analyticsSnapshots  AnalyticsSnapshot[]
+
+  @@map("habits")
+}
+
+model HabitLog {
+  id          String   @id @default(uuid())
+  habitId     String   @map("habit_id")
+  userId      String   @map("user_id")
+  loggedDate  DateTime @map("logged_date") @db.Date
+  completed   Boolean  @default(true)
+  value       Int      @default(1)
+  note        String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, loggedDate])
+  @@index([userId, loggedDate])
+  @@map("habit_logs")
+}
+
+model Streak {
+  id                String    @id @default(uuid())
+  habitId           String    @unique @map("habit_id")
+  currentStreak     Int       @default(0) @map("current_streak")
+  longestStreak     Int       @default(0) @map("longest_streak")
+  lastCompletedDate DateTime? @map("last_completed_date") @db.Date
+  streakStartDate   DateTime? @map("streak_start_date") @db.Date
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@map("streaks")
+}
+
+model Reminder {
+  id        String   @id @default(uuid())
+  habitId   String   @map("habit_id")
+  time      String
+  days      String[]
+  isEnabled Boolean  @default(true) @map("is_enabled")
+  channel   Channel  @default(PUSH)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@map("reminders")
+}
+
+model AnalyticsSnapshot {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  habitId         String   @map("habit_id")
+  snapshotDate    DateTime @map("snapshot_date") @db.Date
+  completionCount Int      @map("completion_count")
+  completionRate  Float    @map("completion_rate")
+  totalDays       Int      @map("total_days")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, snapshotDate])
+  @@index([userId, snapshotDate])
+  @@map("analytics_snapshots")
+}
+
+model AccountabilityPartner {
+  id         String        @id @default(uuid())
+  userId     String        @map("user_id")
+  partnerId  String        @map("partner_id")
+  status     PartnerStatus @default(PENDING)
+  invitedAt  DateTime      @default(now()) @map("invited_at")
+  acceptedAt DateTime?     @map("accepted_at")
+
+  user    User @relation("UserPartners",   fields: [userId],    references: [id], onDelete: Cascade)
+  partner User @relation("PartnerUsers",   fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, partnerId])
+  @@map("accountability_partners")
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  CUSTOM
+}
+
+enum Channel {
+  PUSH
+  EMAIL
+  SMS
+}
+
+enum PartnerStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
