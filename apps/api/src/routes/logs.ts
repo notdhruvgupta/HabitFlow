@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
-import { authenticate, type AuthRequest } from '../middleware/auth'
+import { authenticate } from '../middleware/auth'
 import { validate } from '../middleware/validate'
 import { CreateLogSchema, UpdateLogSchema } from '@habitflow/shared'
 import { recalculateStreak } from '../services/streak.service'
@@ -10,8 +10,8 @@ logsRouter.use(authenticate)
 
 // GET /habits/:habitId/logs?from=&to=
 logsRouter.get('/', async (req, res) => {
-  const { userId }  = req as AuthRequest
-  const { habitId } = req.params
+  const { userId }  = req
+  const { habitId } = req.params as { habitId: string }
   const { from, to } = req.query
 
   const habit = await prisma.habit.findFirst({ where: { id: habitId, userId } })
@@ -37,8 +37,8 @@ logsRouter.get('/', async (req, res) => {
 
 // POST /habits/:habitId/logs
 logsRouter.post('/', validate(CreateLogSchema), async (req, res) => {
-  const { userId }  = req as AuthRequest
-  const { habitId } = req.params
+  const { userId }  = req
+  const { habitId } = req.params as { habitId: string }
 
   const habit = await prisma.habit.findFirst({ where: { id: habitId, userId } })
   if (!habit) return res.status(404).json({ error: 'Habit not found' })
@@ -57,7 +57,7 @@ logsRouter.post('/', validate(CreateLogSchema), async (req, res) => {
 
 // PATCH /habits/:habitId/logs/:logId
 logsRouter.patch('/:logId', validate(UpdateLogSchema), async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const { logId }  = req.params
 
   const existing = await prisma.habitLog.findFirst({

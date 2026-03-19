@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
-  isSameDay, isToday, subMonths, addMonths, startOfWeek, endOfWeek,
+  isToday, subMonths, addMonths, startOfWeek, endOfWeek,
 } from 'date-fns'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,

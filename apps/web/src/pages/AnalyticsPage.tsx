@@ -51,9 +51,6 @@ export function AnalyticsPage() {
 function YearHeatmap({ days }: { days: { date: string; completedCount: number; totalCount: number }[] }) {
   const [tooltip, setTooltip] = useState<{ date: string; pct: number } | null>(null)
 
-  // Build a map and fill missing days
-  const map = new Map(days.map((d) => [d.date, d]))
-
   // Group into weeks (columns)
   const firstDay = new Date(`${days[0]?.date ?? `${new Date().getFullYear()}-01-01`}`)
   const padStart = (getDay(firstDay) + 6) % 7   // Monday-first offset

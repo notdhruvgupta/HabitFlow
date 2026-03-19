@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
-import { authenticate, type AuthRequest } from '../middleware/auth'
+import { authenticate } from '../middleware/auth'
 import { validate } from '../middleware/validate'
 import {
   CreateReminderSchema,
@@ -18,8 +18,8 @@ export const remindersRouter = Router({ mergeParams: true })
 remindersRouter.use(authenticate)
 
 remindersRouter.get('/', async (req, res) => {
-  const { userId } = req as AuthRequest
-  const { habitId } = req.params
+  const { userId } = req
+  const { habitId } = req.params as { habitId: string }
   const habit = await prisma.habit.findFirst({ where: { id: habitId, userId } })
   if (!habit) return res.status(404).json({ error: 'Habit not found' })
   const reminders = await prisma.reminder.findMany({ where: { habitId } })
@@ -27,8 +27,8 @@ remindersRouter.get('/', async (req, res) => {
 })
 
 remindersRouter.post('/', validate(CreateReminderSchema), async (req, res) => {
-  const { userId } = req as AuthRequest
-  const { habitId } = req.params
+  const { userId } = req
+  const { habitId } = req.params as { habitId: string }
   const habit = await prisma.habit.findFirst({ where: { id: habitId, userId } })
   if (!habit) return res.status(404).json({ error: 'Habit not found' })
   const reminder = await prisma.reminder.create({ data: { habitId, ...req.body } })
@@ -36,7 +36,7 @@ remindersRouter.post('/', validate(CreateReminderSchema), async (req, res) => {
 })
 
 remindersRouter.patch('/:reminderId', validate(UpdateReminderSchema), async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const existing = await prisma.reminder.findFirst({
     where: { id: req.params.reminderId, habit: { userId } },
   })
@@ -46,7 +46,7 @@ remindersRouter.patch('/:reminderId', validate(UpdateReminderSchema), async (req
 })
 
 remindersRouter.delete('/:reminderId', async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const existing = await prisma.reminder.findFirst({
     where: { id: req.params.reminderId, habit: { userId } },
   })
@@ -61,19 +61,19 @@ export const categoriesRouter = Router()
 categoriesRouter.use(authenticate)
 
 categoriesRouter.get('/', async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const categories = await prisma.category.findMany({ where: { userId }, orderBy: { name: 'asc' } })
   return res.json(categories)
 })
 
 categoriesRouter.post('/', validate(CreateCategorySchema), async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const category = await prisma.category.create({ data: { userId, ...req.body } })
   return res.status(201).json(category)
 })
 
 categoriesRouter.patch('/:id', validate(UpdateCategorySchema), async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const existing = await prisma.category.findFirst({ where: { id: req.params.id, userId } })
   if (!existing) return res.status(404).json({ error: 'Category not found' })
   const category = await prisma.category.update({ where: { id: req.params.id }, data: req.body })
@@ -81,7 +81,7 @@ categoriesRouter.patch('/:id', validate(UpdateCategorySchema), async (req, res) 
 })
 
 categoriesRouter.delete('/:id', async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const existing = await prisma.category.findFirst({ where: { id: req.params.id, userId } })
   if (!existing) return res.status(404).json({ error: 'Category not found' })
   // Unlink habits (set categoryId to null via onDelete: SetNull in schema)
@@ -95,7 +95,7 @@ export const usersRouter = Router()
 usersRouter.use(authenticate)
 
 usersRouter.get('/me', async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true, email: true, username: true, timezone: true, avatarUrl: true, createdAt: true },
@@ -105,7 +105,7 @@ usersRouter.get('/me', async (req, res) => {
 })
 
 usersRouter.patch('/me', validate(UpdateUserSchema), async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const user = await prisma.user.update({
     where: { id: userId },
     data: req.body,
@@ -115,7 +115,7 @@ usersRouter.patch('/me', validate(UpdateUserSchema), async (req, res) => {
 })
 
 usersRouter.delete('/me', async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   await prisma.user.delete({ where: { id: userId } })
   return res.json({ message: 'Account deleted' })
 })
@@ -126,7 +126,7 @@ export const partnersRouter = Router()
 partnersRouter.use(authenticate)
 
 partnersRouter.get('/', async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const partners = await prisma.accountabilityPartner.findMany({
     where: { OR: [{ userId }, { partnerId: userId }] },
     include: {
@@ -146,7 +146,7 @@ partnersRouter.get('/', async (req, res) => {
 })
 
 partnersRouter.post('/invite', validate(InvitePartnerSchema), async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const target = await prisma.user.findUnique({ where: { email: req.body.email } })
   if (!target) return res.status(404).json({ error: 'User not found' })
   if (target.id === userId) return res.status(400).json({ error: 'Cannot invite yourself' })
@@ -164,7 +164,7 @@ partnersRouter.post('/invite', validate(InvitePartnerSchema), async (req, res) =
 })
 
 partnersRouter.patch('/:id/respond', validate(RespondPartnerSchema), async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const existing = await prisma.accountabilityPartner.findFirst({
     where: { id: req.params.id, partnerId: userId },
   })
@@ -180,7 +180,7 @@ partnersRouter.patch('/:id/respond', validate(RespondPartnerSchema), async (req,
 })
 
 partnersRouter.delete('/:id', async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const existing = await prisma.accountabilityPartner.findFirst({
     where: { id: req.params.id, OR: [{ userId }, { partnerId: userId }] },
   })

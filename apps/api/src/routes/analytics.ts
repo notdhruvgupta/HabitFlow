@@ -1,13 +1,13 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
-import { authenticate, type AuthRequest } from '../middleware/auth'
+import { authenticate } from '../middleware/auth'
 
 export const analyticsRouter = Router()
 analyticsRouter.use(authenticate)
 
 // GET /analytics/overview?date=2026-03-19
 analyticsRouter.get('/overview', async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const date = req.query.date
     ? new Date(req.query.date as string)
     : new Date()
@@ -43,7 +43,7 @@ analyticsRouter.get('/overview', async (req, res) => {
 
 // GET /analytics/habits/:id?from=&to=&granularity=day
 analyticsRouter.get('/habits/:id', async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const { id } = req.params
   const from = req.query.from ? new Date(req.query.from as string) : (() => { const d = new Date(); d.setDate(d.getDate() - 29); return d })()
   const to   = req.query.to   ? new Date(req.query.to   as string) : new Date()
@@ -95,7 +95,7 @@ analyticsRouter.get('/habits/:id', async (req, res) => {
 
 // GET /analytics/heatmap?year=2026
 analyticsRouter.get('/heatmap', async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const year = parseInt(req.query.year as string) || new Date().getFullYear()
   const from = new Date(`${year}-01-01`)
   const to   = new Date(`${year}-12-31`)

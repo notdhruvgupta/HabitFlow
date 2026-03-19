@@ -10,13 +10,13 @@ export interface JwtPayload {
 
 export function signAccess(payload: JwtPayload): string {
   return jwt.sign(payload, ACCESS_SECRET, {
-    expiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? '15m',
+    expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN ?? '15m') as jwt.SignOptions['expiresIn'],
   })
 }
 
 export function signRefresh(payload: JwtPayload): string {
   return jwt.sign(payload, REFRESH_SECRET, {
-    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '30d',
+    expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN ?? '30d') as jwt.SignOptions['expiresIn'],
   })
 }
 

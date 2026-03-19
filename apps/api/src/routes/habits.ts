@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
-import { authenticate, type AuthRequest } from '../middleware/auth'
+import { authenticate } from '../middleware/auth'
 import { validate } from '../middleware/validate'
 import {
   CreateHabitSchema,
@@ -13,7 +13,7 @@ habitsRouter.use(authenticate)
 
 // GET /habits
 habitsRouter.get('/', async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const today = new Date().toISOString().split('T')[0]
 
   const habits = await prisma.habit.findMany({
@@ -40,7 +40,7 @@ habitsRouter.get('/', async (req, res) => {
 
 // POST /habits
 habitsRouter.post('/', validate(CreateHabitSchema), async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const habit = await prisma.habit.create({
     data: { ...req.body, frequency: req.body.frequency.toUpperCase(), userId },
   })
@@ -51,7 +51,7 @@ habitsRouter.post('/', validate(CreateHabitSchema), async (req, res) => {
 
 // GET /habits/:id
 habitsRouter.get('/:id', async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const habit = await prisma.habit.findFirst({
     where: { id: req.params.id, userId },
     include: { streak: true, category: true, reminders: true },
@@ -67,7 +67,7 @@ habitsRouter.get('/:id', async (req, res) => {
 
 // PUT /habits/:id
 habitsRouter.put('/:id', validate(UpdateHabitSchema), async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const exists = await prisma.habit.findFirst({ where: { id: req.params.id, userId } })
   if (!exists) return res.status(404).json({ error: 'Habit not found' })
 
@@ -83,7 +83,7 @@ habitsRouter.put('/:id', validate(UpdateHabitSchema), async (req, res) => {
 
 // PATCH /habits/:id/archive
 habitsRouter.patch('/:id/archive', validate(ArchiveHabitSchema), async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const exists = await prisma.habit.findFirst({ where: { id: req.params.id, userId } })
   if (!exists) return res.status(404).json({ error: 'Habit not found' })
 
@@ -97,7 +97,7 @@ habitsRouter.patch('/:id/archive', validate(ArchiveHabitSchema), async (req, res
 
 // DELETE /habits/:id
 habitsRouter.delete('/:id', async (req, res) => {
-  const { userId } = req as AuthRequest
+  const { userId } = req
   const exists = await prisma.habit.findFirst({ where: { id: req.params.id, userId } })
   if (!exists) return res.status(404).json({ error: 'Habit not found' })
 
