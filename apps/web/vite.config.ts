@@ -22,7 +22,7 @@ export default defineConfig({
     },
   },
   preview: {
-    port: 4173,
+    port: Number(process.env.PORT) || 4173,
     host: true,
     allowedHosts: true,
   },
